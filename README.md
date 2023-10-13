@@ -1,6 +1,6 @@
 # Socket-Based Chat App in GoLang
 
-This is a simple chat application built in GoLang that allows users to communicate in real-time over a local network. The app is designed for learning purposes and showcases the basics of socket programming in Go.
+This is a simple command line based chat application built in GoLang that allows users to communicate in real-time over a local network. The app is designed for learning purposes and showcases the basics of socket programming in Go.
 
 ## Getting Started
 
