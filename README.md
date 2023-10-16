@@ -16,12 +16,11 @@ To run the chat application, follow these steps:
    ./app
    ```
 
-3. When prompted, enter your name.
+3. Server is now running. `telnet 127.0.0.1 8080` Connect the server and type your name when prompted.
 
 ## Usage
 
-Once the chat application is up and running, you can use the following commands:
-- `telnet 127.0.0.1 8080`: Connect the server.  
+Once the chat application is up and running, you can use the following commands:  
 - `/list`: This command will display a list of all online users.
 - `/send <name> <message>`: Use this command to send a message to a specific user. Replace `<name>` with the recipient's name, as listed via the `/list` command, and `<message>` with your text message.
 - Sending a message without specifying a command (e.g., just typing a message) will broadcast it to all online users.
