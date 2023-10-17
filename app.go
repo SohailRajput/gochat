@@ -4,60 +4,67 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
-type People struct {
+type User struct {
 	name string
 	conn net.Conn
 }
 
-func (p People) Read() string {
+func (u User) Read() string {
 	buff := make([]byte, 1024)
-	size, err := p.conn.Read(buff)
+	size, err := u.conn.Read(buff)
 	if err != nil {
 		return "Error while reading text"
 	}
 	return strings.TrimSpace(string(buff[:size]))
 }
 
-func (p People) write(message string) {
-	_, err := p.conn.Write([]byte(message + "\n"))
+func (u User) write(message string) {
+	_, err := u.conn.Write([]byte(message + "\n"))
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
 }
 
-func (p People) ReadMessageStream() {
+func (u User) ReadMessageStream() {
 	for {
-		msg := p.Read()
+		msg := u.Read()
 		if msg == "" {
 			continue
 		}
-		cmd := make([]string, 16)
 		if strings.HasPrefix(msg, "/send") {
-			cmd = strings.SplitN(msg, " ", 3)
+			cmd := strings.SplitN(msg, " ", 3)
 			if len(cmd) != 3 {
-				p.write("Error: Couldn't understand the command. \nCorrect Usage: /send <recipient> <message>")
+				u.write("Error: Couldn't understand the command. \nCorrect Usage: /send <recipient> <message>")
 				continue
 			}
 			receiverName, message := cmd[1], cmd[2]
 			if receiverName == "" || message == "" {
-				p.write("Error: malformed command\n")
+				u.write("Error: malformed command\n")
 				continue
 			}
 			if receiver, found := Users[receiverName]; found {
+				message = fmt.Sprintf("%d:%d:%d [%s] >> %s",
+					time.Now().Hour(),
+					time.Now().Minute(),
+					time.Now().Second(), u.name, message)
 				receiver.write(message + "\n")
 			} else {
-				p.write("Error: Couldn't find " + receiverName + "\n")
+				u.write("Error: Couldn't find " + receiverName + "\n")
 				continue
 			}
 		} else if strings.HasPrefix(msg, "/list") {
 			for k := range Users {
-				p.write(k)
+				u.write(k)
 			}
+		} else if strings.HasPrefix(msg, "/help") {
+			doc := "Commands are following: \n/list : list all the User available to chat\n/send <person> <message> : Send private message to User listed using /command\n/h : Show help text\n---\n"
+			u.write(doc)
 		} else {
 			for k, v := range Users {
-				if k == p.name {
+				if k == u.name {
 
 				} else {
 					v.write(msg + "\n")
@@ -69,11 +76,10 @@ func (p People) ReadMessageStream() {
 
 const (
 	NETWORK string = "tcp"
-	IP      string = "0.0.0.0"
-	PORT    string = ":8080"
+	PORT    string = "8080"
 )
 
-var Users = make(map[string]People, 8)
+var Users = make(map[string]User, 8)
 
 func main() {
 	connaction := Connect()
@@ -89,7 +95,8 @@ func main() {
 }
 
 func Connect() *net.TCPListener {
-	tcpAddr, err := net.ResolveTCPAddr(NETWORK, IP+PORT)
+	Host := fmt.Sprintf(":%s", PORT)
+	tcpAddr, err := net.ResolveTCPAddr(NETWORK, Host)
 	if err != nil {
 		panic(err)
 	}
@@ -100,6 +107,7 @@ func Connect() *net.TCPListener {
 	}
 	return listner
 }
+
 func HandleConnection(conn net.Conn) {
 	go func() {
 		conn.Write([]byte("Name: "))
@@ -111,9 +119,9 @@ func HandleConnection(conn net.Conn) {
 			return
 		}
 		name := strings.TrimSpace(string(input[:size]))
-		Users[name] = People{name: name, conn: conn}
+		Users[name] = User{name: name, conn: conn}
 		conn.Write([]byte("Hello " + name + "\n"))
-		doc := "Commands are following: \n/list : list all the people available to chat\n/send <person> <message> : Send private message to people listed using /command\n/h : Show help text\n---\n"
+		doc := "Commands are following: \n/list : list all the User available to chat\n/send <person> <message> : Send private message to User listed using /command\n/help : Show help text\n---\n"
 		conn.Write([]byte(doc))
 		go Users[name].ReadMessageStream()
 	}()
